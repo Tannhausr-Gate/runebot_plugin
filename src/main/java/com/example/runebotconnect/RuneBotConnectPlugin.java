@@ -46,7 +46,9 @@ import java.util.regex.Pattern;
 public class RuneBotConnectPlugin extends Plugin
 {
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-    private static final Gson GSON = new Gson();
+
+    @Inject
+    private Gson gson;
 
     private static final String NOT_CONFIGURED_MESSAGE =
             "RuneBot Connect is not configured. Paste your token from /setup runelite-link into plugin settings.";
@@ -216,7 +218,7 @@ public class RuneBotConnectPlugin extends Plugin
 
         // The endpoint expects a JSON array. This plugin only ever sends one message
         // per call, but the batch shape is what the server parses.
-        String json = GSON.toJson(new ChatBroadcastItem[] { item });
+        String json = gson.toJson(new ChatBroadcastItem[] { item });
 
         postToBot("/runelite/chat", json, "Chat broadcast");
     }
@@ -278,7 +280,7 @@ public class RuneBotConnectPlugin extends Plugin
         payload.amount = amount;
         payload.memberName = memberName;
 
-        String json = GSON.toJson(payload);
+        String json = gson.toJson(payload);
 
         String url = SERVER_URL + "/runelite/coffer";
         HttpRequest request = imageBytes != null
