@@ -29,6 +29,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -46,12 +47,10 @@ import java.util.regex.Pattern;
 public class RuneBotConnectPlugin extends Plugin
 {
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(10);
 
     @Inject
     private Gson gson;
-
-    private static final String NOT_CONFIGURED_MESSAGE =
-            "RuneBot Connect is not configured. Paste your token from /setup runelite-link into plugin settings.";
 
     private static final class ChatBroadcastItem
     {
@@ -288,9 +287,9 @@ public class RuneBotConnectPlugin extends Plugin
                 : buildJsonRequest(url, linkToken, json);
 
         HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenAccept(response -> log.info("Coffer transaction responded: {} — {}", response.statusCode(), response.body()))
+                .thenAccept(response -> log.debug("Coffer transaction responded: {}", response.statusCode()))
                 .exceptionally(ex -> {
-                    log.error("Failed to reach coffer transaction endpoint", ex);
+                    log.debug("Failed to reach coffer transaction endpoint", ex);
                     return null;
                 });
     }
@@ -299,6 +298,7 @@ public class RuneBotConnectPlugin extends Plugin
     {
         return HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .header("x-runebot-runelite-token", linkToken)
                 .POST(HttpRequest.BodyPublishers.ofString(json))
@@ -325,6 +325,7 @@ public class RuneBotConnectPlugin extends Plugin
 
         return HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "multipart/form-data; boundary=" + MULTIPART_BOUNDARY)
                 .header("x-runebot-runelite-token", linkToken)
                 .POST(HttpRequest.BodyPublishers.ofByteArrays(parts))
@@ -344,15 +345,16 @@ public class RuneBotConnectPlugin extends Plugin
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(SERVER_URL + path))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .header("x-runebot-runelite-token", linkToken)
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
         HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenAccept(response -> log.info("{} responded: {} — {}", label, response.statusCode(), response.body()))
+                .thenAccept(response -> log.debug("{} responded: {}", label, response.statusCode()))
                 .exceptionally(ex -> {
-                    log.error("Failed to reach " + label.toLowerCase() + " endpoint", ex);
+                    log.debug("Failed to reach {} endpoint", label.toLowerCase(), ex);
                     return null;
                 });
     }
